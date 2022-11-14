@@ -38,7 +38,7 @@ class MDP:
 			D[h] = d@Ppi[h - 1]
 
 
-		print("Marginal distributions: ", D)
+		# print("Marginal distributions: ", D)
 		v = 0
 		rpi = self.calc_rpi(pi)
 
@@ -75,6 +75,22 @@ class MDP:
 			D.append(tau)
 		return (G/k, np.array(Re), np.array(D, dtype="int,int, f, int").reshape((k, self.H)))
 
+	def rollout_multipol(self, Pi, run_vec, readData = False, writeData = False): #run_vec[i] is number of trajectories to collect according to Pi[i]
+		if readData:
+			D = np.load("ucb_Dshadow.npy")
+			return D
+
+		R = int(np.sum(run_vec))
+		D = []
+		for i in range(1, len(Pi)):
+			if i%1000 == 0:
+				print("Gathering ", run_vec[0], " trajectories using policy ", i)
+			F = self.rollout(Pi[i], int(run_vec[i]))
+			D.append(F[2][0])
+			# D = np.concatenate((D, F[2]), axis = 0)
+		if writeData:
+			np.save("ucb_Dshadow", D)
+		return np.array(D)
 
 ####### Gym Environment #########
 
