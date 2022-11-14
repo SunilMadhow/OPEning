@@ -121,12 +121,34 @@ class ToyEnv(gym.Env): # two-state, two-action nonstationary MDP
 		self.R = self.R + r
 		self.h = self.h + 1
 		done = False
-		if self.h == self.H - 1:
+		if self.h == self.H:
 			done = True
 
 		return self.s, r, done
 
 
+def gym_rollout(pi, k, env):
+	D = []
+	Re = []
+	G = 0
+	for j in range(k):
+		env.reset()
+
+		s = env.s
+		R = 0
+		tau = []
+		d = False
+		while not d:
+			a = pi[env.h, s]
+			s_, r, d = env.step(a)
+
+			tau.append((s, a, r, s_))
+			s = s_
+			R = R + r
+		G += R
+		Re.append(R)
+		D.append(tau)
+	return (G/k, np.array(Re), np.array(D, dtype="int,int, f, int").reshape((k, env.H)))
 
 
 
