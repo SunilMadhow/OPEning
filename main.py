@@ -58,9 +58,12 @@ M = MDP(H, S, A, P, r, [1/2, 1/2])
 # print("Vpi1 = ", Z[0])
 # print("Vpi1[0] average = ", (Z[0][0, 0] + Z[0][0, 1])/2)
 # print("pi1 output value: ", M.evaluate(pi1))
-P = ucbvi(M, 100000, .1)
-piucb = P[1]
-print("ucbvi output estimated function ", P[0])
+F = ucbvi(M, 100_000, .1)
+piucb = F[1]
+M_ = F[2]
+print("estimated transition kernel ", M_.P)
+print("true transition kernel ", M.P)
+
 print("ucbvi output true value ", M.evaluate(piucb))
 print("solution ", M.evaluate(value_iteration(M)[1]))
 

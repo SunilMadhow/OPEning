@@ -37,12 +37,14 @@ def ucbvi(M: MDP, k, δ): #want this to generate a dataset and a good policy. mo
 	pi = np.random.randint(0, 2, (M.H, M.S))
 	Pi = [pi]
 
-	nhsas_ = np.zeros(M.H*M.S*M.A*M.S).reshape((M.H, M.S ,M.A, M.S))
+	nhsas_ = np.zeros(M.H*M.S*M.A*M.S, dtype = 'f').reshape((M.H, M.S ,M.A, M.S))
 	M_ = deepcopy(M)
 
-	H = M.A
+	H = M.H
 	S = M.S
 	A = M.A
+
+	# nhsa = np.zeros(H*S*A).reshape((H, S,A))
 
 	T = k*M.H
 	L = math.log(5*M.S*M.A*T/δ)
@@ -59,10 +61,63 @@ def ucbvi(M: MDP, k, δ): #want this to generate a dataset and a good policy. mo
 			x = sars[0]
 			y = sars[1]
 			z = sars[3]
-			nhsas_[t][x, z, z] = nhsas_[t][x, z, z] + 1
+			nhsas_[t, x, y, z] = nhsas_[t, x, y, z] + 1
 		nhsa = np.sum(nhsas_, axis = 3)
 
 		# print("nhsas_ = ", nhsas_)
+		# print("nhsa = ")
+		bi = 2*H*np.sqrt(L*np.ones(M_.H*M_.S*M_.A).reshape(M_.H, M_.S, M_.A)/nhsa)
+		# print("b = ", bi)	
+		M_.r = M.r + bi
+		for h in range(H):
+			for s in range(S):
+				for a in range(A):
+					for s_ in range(S):
+						if nhsa[h, s, a] == 0:
+							M_.P[h, s, a, s_] = 0
+						else:
+							M_.P[h, s, a, s_] = nhsas_[h, s, a, s_]/nhsa[h, s, a]
+		# print("number of visited state-action-horizon pairs: ", np.count_nonzero(nhsa))
+		R = value_iteration(M_)
+		# print("Value at iteration ", i, " = ", R[0])
+		pi = R[1]
+		# print("pi = ", pi)
+		Pi.append(pi)
+	# print("D = ", np.array(D))
+	return (np.array(D), pi, M_)
+
+def gym_ucbvi(env, k, δ): #want this to generate a dataset and a good policy. mostly just need dataset
+	D = []
+	
+	pi = np.random.randint(0, 2, (M.H, M.S))
+	Pi = [pi]
+
+	nhsas_ = np.zeros(M.H*M.S*M.A*M.S).reshape((M.H, M.S ,M.A, M.S))
+	M_ = deepcopy(M)
+
+	H = M.H
+	S = M.S
+	A = M.A
+
+	T = k*M.H
+	L = math.log(5*M.S*M.A*T/δ)
+	C = 7*M.H*math.sqrt(L)
+
+	for i in range(0, k):	
+		Z = gym_rollout(env, pi, 1)
+		tau = Z[2][0]
+		D.append(tau)
+		print(tau)
+
+		for t in range(len(tau)):
+			sars = tau[t]
+			x = sars[0]
+			y = sars[1]
+			z = sars[3]
+			nhsas_[t][x, z, z] = nhsas_[t][x, z, z] + 1
+		nhsa = np.sum(nhsas_, axis = 3)
+
+		print("nhsas_ = ", nhsas_)
 		bi = 2*H*np.sqrt(L*np.ones(M_.H*M_.S*M_.A).reshape(M_.H, M_.S, M_.A)/nhsa)
 		print("b = ", bi)
 		M_.r = M.r + bi
@@ -82,8 +137,6 @@ def ucbvi(M: MDP, k, δ): #want this to generate a dataset and a good policy. mo
 		Pi.append(pi)
 	# print("D = ", np.array(D))
 	return (np.array(D), pi)
-
-
 		# M_.P[h, s, a, s_] = nhsas_/nhsa
 
 
