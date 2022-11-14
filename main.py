@@ -7,10 +7,14 @@ S = 2
 A = 2
 
 which_model = np.random.randint(0, 2, H)
-r = np.random.choice([1/4,1/2,3/4,1], (H, S*A))
+r = np.random.choice([1/4,1/2,3/4,1], (H, S, A))
 # print(r)
-Pa = np.array([[1, 0], [3/4, 1/4], [0, 1], [1/2, 1/2]])
-Pb = np.array([[1, 0], [1/2, 1/2], [0, 1], [1/4, 3/4]])
+
+Pa = np.array([[[1, 0],[3/4, 1/4]], [[0, 1], [1/2, 1/2]]])
+Pb = np.array([[[1, 0],[1/2, 1/2]], [[0, 1], [1/4, 3/4]]])
+
+# Pa = np.array([[1, 0], [3/4, 1/4], [0, 1], [1/2, 1/2]])
+# Pb = np.array([[1, 0], [1/2, 1/2], [0, 1], [1/4, 3/4]])
 
 P = np.array([Pa if which_model[i] else Pb for i in range(0, H)])
 
@@ -33,7 +37,7 @@ M = MDP(H, S, A, P, r, [1/2, 1/2])
 # print("rpi[1] ", M.calc_rpi(pi)[1])
 
 # pi = np.array([[1, 1] for i in range(0, H)])
-# print("pi = ", pi)
+# # print("pi = ", pi)
 # out = M.rollout(pi, 20000)
 
 # D = out[2]
@@ -50,12 +54,15 @@ M = MDP(H, S, A, P, r, [1/2, 1/2])
 # Z = value_iteration(M)
 # pi1 = Z[1]
 # print("pi1 = ", pi1)
-# # 
+# # # 
 # print("Vpi1 = ", Z[0])
 # print("Vpi1[0] average = ", (Z[0][0, 0] + Z[0][0, 1])/2)
 # print("pi1 output value: ", M.evaluate(pi1))
-
-ucbvi(M, 10, .001)
+P = ucbvi(M, 100000, .1)
+piucb = P[1]
+print("ucbvi output estimated function ", P[0])
+print("ucbvi output true value ", M.evaluate(piucb))
+print("solution ", M.evaluate(value_iteration(M)[1]))
 
 # print("VI output Monte Carlo value estimate: ", M.rollout(pi1, 5000)[0])
 # print("nhsa ", est.nhsa)

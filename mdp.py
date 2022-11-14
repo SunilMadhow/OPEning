@@ -37,7 +37,7 @@ class MDP:
 		for h in range(1, self.H):
 			D[h] = d@Ppi[h - 1]
 
-		
+
 		print("Marginal distributions: ", D)
 		v = 0
 		rpi = self.calc_rpi(pi)
@@ -49,10 +49,10 @@ class MDP:
 		return v
 
 	def index_P(self, h, s, a):
-		return self.P[h, s*self.A + a]
+		return self.P[h, s, a]
 
 	def index_r(self, h, s, a):
-		return self.r[h, s*self.A + a]
+		return self.r[h, s, a]
 	
 	def rollout(self, pi, k): 
 		D = []
@@ -73,4 +73,61 @@ class MDP:
 			G += R
 			Re.append(R)
 			D.append(tau)
-		return (G/k, np.array(Re), np.array(D, dtype="f,f, f, f").reshape((k, self.H)))
+		return (G/k, np.array(Re), np.array(D, dtype="int,int, f, int").reshape((k, self.H)))
+
+
+####### Gym Environment #########
+
+import gym
+from gym.envs.toy_text.utils import categorical_sample
+from gym import spaces
+
+class ToyEnv(gym.Env): # two-state, two-action nonstationary MDP
+	S = 2
+	A = 2
+	Pa = np.array([[[1, 0],[3/4, 1/4]], [[0, 1], [1/2, 1/2]]])
+	Pb = np.array([[[1, 0],[1/2, 1/2]], [[0, 1], [1/4, 3/4]]])
+
+	def __init__(self, H, d_0, randomize = True):
+		super(ToyEnv, self).__init__()
+		self.H = H
+		self.d_0 = d_0
+
+		if randomize:
+			self.r = np.random.choice([1/4,1/2,3/4,1], (self.H, self.S, self.A))
+
+			which_model = np.random.randint(0, 2, H)
+			self.P = np.array([self.Pa if which_model[i] else self.Pb for i in range(0, H)])
+
+		self.action_space = spaces.Discrete(2)
+		self.observation_space = spaces.Discrete(2)
+		self.reward_range = (1/4, 1)
+
+		self.R = 0
+
+		self.reset()
+
+	def reset(self):
+		self.s = categorical_sample(self.d_0, self.np_random)
+		self.h = 0
+
+		return self.s
+		
+
+	def step(self, a):
+		pmf = self.P[self.h, self.s, a]
+		self.s = categorical_sample(pmf, self.np_random)
+		r = self.r[self.h, self.s, a]
+		self.R = self.R + r
+		self.h = self.h + 1
+		done = False
+		if self.h == self.H - 1:
+			done = True
+
+		return self.s, r, done
+
+
+
+
+
+

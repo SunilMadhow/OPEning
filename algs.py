@@ -16,34 +16,33 @@ def value_iteration(M : MDP):
 	V = np.zeros((H+1)*S).reshape(H+1, S)
 	pi = np.zeros(H*S).reshape(H,S)
 
+	Q = np.zeros(H*S*A).reshape((H, S, A))
 	for t in reversed(range(0, H)):
 		for s in range(0, S):
 			Qsa = np.zeros(A)
 			for a in range(0, A):
 				Ev = np.dot(V[t+1],M.index_P(t, s, a))
-				Qsa[a] = M.index_r(t, s, a) + Ev
+				Qsa[a] = min(M.index_r(t, s, a) + Ev, H)
+			Q[t, s] = Qsa
 			V[t, s] = np.amax(Qsa)
-			pi[t, s] = np.argmax(Qsa)
+			# pi[t, s] = np.argmax(Qsa)
+			pi[t, s] = np.random.choice(np.flatnonzero(Qsa == Qsa.max()))
+	print("Q = ", Q)
 
 	return (V, pi.astype(int))
 
-def transition_statistics(D, H, S, A):
-	k = len(D)
-	nhsas_ = np.zeros(H*S*A*S).reshape((H, S, A, S))
-	for h in range(0, H):
-		for s in range(0, S):
-			for a in range(0, A):
-				for s_ in range(0, S):
-					for i in range(0, k):
-						nhsas_[h, s, a, s_] += (D[i, h][0] == s) and (D[i, h][1] == a and D[i, h][3] == s_)
-	nhsa = np.sum(nhsas_, axis = 3)
-	return (nhsa, nhsas_)
-
 def ucbvi(M: MDP, k, δ): #want this to generate a dataset and a good policy. mostly just need dataset
 	D = []
+	
 	pi = np.random.randint(0, 2, (M.H, M.S))
+	Pi = [pi]
+
 	nhsas_ = np.zeros(M.H*M.S*M.A*M.S).reshape((M.H, M.S ,M.A, M.S))
 	M_ = deepcopy(M)
+
+	H = M.A
+	S = M.S
+	A = M.A
 
 	T = k*M.H
 	L = math.log(5*M.S*M.A*T/δ)
@@ -52,17 +51,40 @@ def ucbvi(M: MDP, k, δ): #want this to generate a dataset and a good policy. mo
 	for i in range(0, k):	
 		Z = M.rollout(pi, 1)
 		tau = Z[2][0]
+		D.append(tau)
 		print(tau)
-		for sars in tau:
-			x = int(sars[0])
-			y = int(sars[1])
-			z = int(sars[3])
-			nhsas_[x, z, z] = nhsas_[x, z, z] + 1
-		nhsa = np.sum(nhsas_, axis = 3)
-		bi = np.ones(M_.H*M_.S*M_.A)/nhsa
 
-		M_.r = M_.r
-		M_ = MDP()
+		for t in range(len(tau)):
+			sars = tau[t]
+			x = sars[0]
+			y = sars[1]
+			z = sars[3]
+			nhsas_[t][x, z, z] = nhsas_[t][x, z, z] + 1
+		nhsa = np.sum(nhsas_, axis = 3)
+
+		# print("nhsas_ = ", nhsas_)
+		bi = 2*H*np.sqrt(L*np.ones(M_.H*M_.S*M_.A).reshape(M_.H, M_.S, M_.A)/nhsa)
+		print("b = ", bi)
+		M_.r = M.r + bi
+		for h in range(H):
+			for s in range(S):
+				for a in range(A):
+					for s_ in range(S):
+						if nhsa[h, s, a] == 0:
+							M_.P[h, s, a, s_] = 0
+						else:
+							M_.P[h, s, a, s_] = nhsas_[h, s, a, s_]/nhsa[h, s, a]
+		# print("number of visited state-action-horizon pairs: ", np.count_nonzero(nhsa))
+		R = value_iteration(M_)
+		# print("Value at iteration ", i, " = ", R[0])
+		pi = R[1]
+		# print("pi = ", pi)
+		Pi.append(pi)
+	# print("D = ", np.array(D))
+	return (np.array(D), pi)
+
+
+		# M_.P[h, s, a, s_] = nhsas_/nhsa
 
 
 
