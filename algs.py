@@ -31,10 +31,23 @@ def value_iteration(M : MDP):
 
 	return (V, pi.astype(int))
 
-def ucbvi(M: MDP, k, δ, readData = False, writeData = False): #want this to generate a dataset and a good policy. mostly just need dataset
+
+def val_func(M : MDP, pi):
+	H = M.H
+	S = M.S
+	A = M.A
+
+	V = np.zeros((H+1)*S).reshape(H+1, S)
+	for t in reversed(range(0, H)):
+		for s in range(0, S):
+			V[t, s] = np.dot(V[t + 1], M.index_P(t, s, pi[t, s])) + M.index_r(t, s, pi[t, s])
+	return (V, np.average(V[0]))
+
+
+def ucbvi(M: MDP, k, δ, readData = False, writeData = False, readFrom = None, saveTo = None): #want this to generate a dataset and a good policy. mostly just need dataset
 	if readData:
-		D = np.load("ucbvi_D.npy")
-		Pi = np.load("ucbvi_Pi.npy")
+		D = np.load(readFrom + "_D.npy")
+		Pi = np.load(readFrom + "_Pi.npy")
 		print("Warning: M_ not available due to readData flag being True")
 		return (D, Pi, M)
 
@@ -95,8 +108,8 @@ def ucbvi(M: MDP, k, δ, readData = False, writeData = False): #want this to gen
 	D = np.array(D)
 	Pi = np.array(Pi)
 	if writeData:
-		np.save("ucbvi_D", D)
-		np.save("ucbvi_Pi", Pi)
+		np.save(saveTo + "_D", D)
+		np.save(saveTo + "_Pi", Pi)
 	# print("D = ", np.array(D))
 	return (D, Pi, M_)
 
