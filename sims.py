@@ -6,7 +6,7 @@ H = 5
 S = 2
 A = 2
 
-N = 3000
+N = 50000
 
 which_model = np.random.randint(0, 2, H)
 r = np.random.choice([1/4,1/2,3/4,1], (H, S, A))
@@ -73,7 +73,8 @@ for n in range(len(y_ad) + 1, M):
 	y_ad.append(n*(vpi - vhat_ucb)**2)
 	y_sh.append(n*(vpi - vhat_sh)**2)
 
-print("min nhsa = ", np.amin(tmis_ucb.nhsa[n]))
+# print("min nhsa = ", np.amin(tmis_ucb.nhsa[n]))
+print("Phat = ", tmis_ucb.calc_Phat(n))
 # print(len(y_ad))
 # np.save("adaptive", np.array(y_ad))
 # np.save("shadow", np.array(y_sh))

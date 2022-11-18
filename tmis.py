@@ -43,23 +43,25 @@ class TMIS2:
 
 	def calc_Phat(self, n):
 		self.calc_nhsas(n)
-		Phat = np.zeros((self.H*self.S*self.A*self.S)).reshape((self.H, self.S, self.A, self.S))
-		for h in range(0, self.H):
-			for s in range(0, self.S):
-				for a in range(0, self.A):
-					for s_ in range(0, self.S):
-						if (self.nhsa[n, h, s, a] == 0): 
-							Phat[h, s, a, s_] = 0
-						else:
-							Phat[h, s, a, s_] = self.nhsas[n, h, s, a, s_]/self.nhsa[n, h, s, a]
-		# Phat = (self.nhsas[n]/self.nhsa[n, :, :, :, None])
+		# Phat = np.zeros((self.H*self.S*self.A*self.S)).reshape((self.H, self.S, self.A, self.S))
+		# for h in range(0, self.H):
+		# 	for s in range(0, self.S):
+		# 		for a in range(0, self.A):
+		# 			for s_ in range(0, self.S):
+		# 				if (self.nhsa[n, h, s, a] == 0): 
+		# 					Phat[h, s, a, s_] = 0
+		# 				else:
+		# 					Phat[h, s, a, s_] = self.nhsas[n, h, s, a, s_]/self.nhsa[n, h, s, a]
+		Phat = (self.nhsas[n]/self.nhsa[n, :, :, :, None])
 		# print("Phat shape = ", Phat)
 		return Phat
 
 	def evaluate(self, pi, n):
 		d_0 = self.d_0_est(n)[n]
+		# print("d_0 = ", d_0)
 		# print("M_ -> d_0 = ", d_0)
 		Phat = self.calc_Phat(n)
+		# print("Phat = ", Phat)
 		# print("M_ -> P = ", Phat)
 		return MDP(self.H, self.S, self.A, Phat, self.r, d_0).evaluate(pi)
 

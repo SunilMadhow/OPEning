@@ -113,6 +113,58 @@ def ucbvi(M: MDP, k, δ, readData = False, writeData = False, readFrom = None, s
 	# print("D = ", np.array(D))
 	return (D, Pi, M_)
 
+import random
+def sarsa(env, k, ε, α):
+	H = env.H
+	S = env.S
+	A = env.A
+
+
+	Q = np.zeros((H+1)*S*A).reshape((H+1, S, A))
+	is_done = False
+
+	D = []
+	Pi = []
+
+	for i in range(0, k):
+		tau = []
+		is_done = False
+
+		s = env.s
+		h = env.h
+		if random.uniform(0, 1) > ε:
+			a = np.argmax(Q[h, s])
+		else:
+			a = random.choice([0, 1])
+
+		pi = np.zeros(H*S).reshape((H, S)) #defined by each iterated Q function
+		pi[h] = np.argmax(Q[h], axis = 1)
+		while not is_done:
+
+			s_, r, is_done = env.step(a)
+
+			if random.uniform(0, 1) > ε:
+				a_ = np.argmax(Q[h + 1, s_])
+			else:
+				a_ = random.choice([0, 1])
+			
+			Q[h, s, a] = Q[h, s, a] + α*(r + Q[h + 1, s_, a_] - Q[h, s, a])
+
+			tau.append((s, a, r, s_))
+			
+			if env.h < env.H - 1:
+				pi[h + 1] = np.argmax(Q[h + 1], axis = 1)
+			a = a_
+			s = s_
+			h = env.h
+		print("pi = ", pi.astype(int))
+
+		D.append(tau)
+		Pi.append(pi.astype(int))
+		env.reset()
+	return (np.array(D, dtype = "int,int, f, int"), Pi)
+
+
 # def gym_ucbvi(env, k, δ): #want this to generate a dataset and a good policy. mostly just need dataset
 # 	D = []
 	

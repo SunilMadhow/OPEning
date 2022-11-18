@@ -1,4 +1,5 @@
 import numpy as np
+import random
 class MDP:
 	def __init__(self, H, S, A, P, r, d_0):
 		self.H = H
@@ -122,6 +123,8 @@ class ToyEnv(gym.Env): # two-state, two-action nonstationary MDP
 
 		self.R = 0
 
+		self.M = MDP(self.H, self.S, self.A, self.P, self.r, self.d_0)
+
 		self.reset()
 
 	def reset(self):
@@ -142,6 +145,30 @@ class ToyEnv(gym.Env): # two-state, two-action nonstationary MDP
 			done = True
 
 		return self.s, r, done
+
+	def rollout_multipol(self, Pi, epsilon = None): #epsilon is a hack because only det. policies are rep but need sarsa shadow
+		D = []
+
+		for i in range(len(Pi)):
+			done = False
+			pi = Pi[i]
+			tau = []
+			while not done:
+				s = int(self.s)
+				h = int(self.h)
+				a = int(pi[h, s])
+				if epsilon:
+					if random.uniform(0, 1) > epsilon:
+						a = random.choice([0, 1])
+				s_, r, done =  self.step(a)
+				tau.append((s, a, r, s_))
+			self.reset()
+			D.append(tau)
+		return np.array(D, dtype="int,int, f, int")
+
+	def evaluate(self, pi):
+		self.M.evaluate(pi)
+
 
 
 def gym_rollout(pi, k, env):
