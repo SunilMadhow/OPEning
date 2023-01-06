@@ -15,6 +15,13 @@ class DiscreteState(gym.ObservationWrapper):
 		self.original = deepcopy(env.unwrapped)
 		self.original.render_mode = None
 		self.observation_space = Discrete(num_states[0]*num_states[1])
+		self.H = 20
+		self.S = self.observation_space.n
+		self.A = self.action_space.n
+		self.r = -1*np.ones((self.H, self.S, self.A))
+		for j in range(0, self.num_states[1]):
+			self.r[:, state_to_index(self, (self.num_states[0] - 1, j))] = 0
+    	
 
 	def observation(self, obs):
 		s = (obs - self.original.observation_space.low)*np.array([10, 100])

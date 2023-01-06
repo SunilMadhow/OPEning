@@ -27,7 +27,7 @@ print("done")
 # print("s = ", s)
 # print("s_", s_)
 
-Z = value_iteration(env)
+Z = value_iteration(env, env.r)
 pi = Z[1]
 R = 0
 # s = np.array(cenv2.reset())
@@ -35,7 +35,7 @@ R = 0
 s = env.reset()[0]
 # print(env.)
 print("s = ", s)
-for t in range(0, 200):
+for t in range(0, 20):
 	ds = state_to_index(env, s)
 	print("ds = ", ds)
 	print("pi says ", pi[t, ds])

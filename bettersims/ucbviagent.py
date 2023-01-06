@@ -6,10 +6,17 @@ import numpy as np
 
 from itertools import product
 
-def value_iteration(env):
+
+## So gotta modify value_iteration so that it accepts a transition kernel instead of querying environment
+## for dynamics. 
+## Or do we? Since environment is determinisitic, I believe we can just directly do value_iteration on the
+## true env with exploration-augmented rewards
+
+
+def value_iteration(env, r):
 
     
-    H = 200 #for mountaincar 
+    H = env.H #for mountaincar 
     S = env.observation_space.n
     print("S = ", S)
     A = env.action_space.n
@@ -23,28 +30,17 @@ def value_iteration(env):
     pi = np.zeros(H*S).reshape(H,S)
 
     Q = np.zeros(H*S*A).reshape((H, S, A))
-    for t in reversed(range(0, 200)):
+    for t in reversed(range(0, env.H)):
         print("t = ", t)
-        for ds in product(range(0, env.num_states[0] - 1), range(0, env.num_states[1])):
+        for ds in product(range(0, env.num_states[0] - 1), range(0, env.num_states[1])): #first range encodes that V[top of the hill] = 0
             # print("s = ", state_to_index(env, ds)) 
             s = state_to_index(env, ds)
             Qsa = np.zeros(A)
             for a in range(0, A):
-                # print("a = ", a)
                 ds_ = discrete_dynamics(env, ds, a)
                 s_  = state_to_index(env, ds_)
-                # x = 0
-                # if s_[0] = env.num_states[0] - 1: # if terminal
-                #     x = 1
-                # print("s_ = ", s_)
-                # if ds_[0] == env.num_states[0] - 1:
-                #     print("ping")
-                #     x = 200
-                # else:
-                #     x = -1
-
                 Ev = V[t+1][s_]
-                Qsa[a] = -1 + Ev
+                Qsa[a] = r[t, s, a] + Ev
             Q[t, s] = Qsa
             # print(np.amax(Qsa))
             V[t, s] = np.amax(Qsa)
@@ -55,6 +51,47 @@ def value_iteration(env):
     # print(V[8])
     print(V[1])
     return (V, pi.astype(int))
+
+
+# def value_iteration(env):
+
+    
+#     H = env.H #for mountaincar 
+#     S = env.observation_space.n
+#     print("S = ", S)
+#     A = env.action_space.n
+#     print("A = ", A)
+
+
+#     V = np.empty((H+1)*S).reshape(H+1, S)
+
+#     # for j in range(0, env.num_states[1]):
+#     #     V[:, state_to_index(env, (env.num_states[0] - 1, j))] = 200
+#     pi = np.zeros(H*S).reshape(H,S)
+
+#     Q = np.zeros(H*S*A).reshape((H, S, A))
+#     for t in reversed(range(0, 200)):
+#         print("t = ", t)
+#         for ds in product(range(0, env.num_states[0] - 1), range(0, env.num_states[1])): #first range encodes that V[top of the hill] = 0
+#             # print("s = ", state_to_index(env, ds)) 
+#             s = state_to_index(env, ds)
+#             Qsa = np.zeros(A)
+#             for a in range(0, A):
+#                 ds_ = discrete_dynamics(env, ds, a)
+#                 s_  = state_to_index(env, ds_)
+
+#                 Ev = V[t+1][s_]
+#                 Qsa[a] = -1 + Ev
+#             Q[t, s] = Qsa
+#             # print(np.amax(Qsa))
+#             V[t, s] = np.amax(Qsa)
+#             # pi[t, s] = np.argmax(Qsa)
+#             pi[t, s] = np.random.choice(np.flatnonzero(Qsa == Qsa.max()))
+#     # print("Q = ", Q)
+#     # print(V[9])
+#     # print(V[8])
+#     print(V[1])
+#     return (V, pi.astype(int))
 
 
     # def val_func(M : MDP, pi):
@@ -69,6 +106,60 @@ def value_iteration(env):
     #     return (V, np.average(V[0]))
 
 
+# def P(env, s, a, t = 10):
+
+
+def rollout(env, pi):
+    s = env.reset()[0]
+    # print(env.)
+    tau = []
+    for t in range(0, 20):
+        ds = state_to_index(env, s)
+        print("ds = ", ds)
+        print("pi says ", pi[t, ds])
+        for i in range(0, 10):
+            s, r, done, info, _ = env.step(pi[t, ds])
+            print()
+            R = R + r
+        tau.append((ds, a, state_to_index(env, s)))
+        if done: 
+            print("finished")
+            break 
+
+# 
+def ucbvi(env, k, delta):
+    D = []
+
+    pi = np.random.randint(0, 2, (env.H, env.observation_space.n))
+    Pi = pi
+
+    nhsas_ = np.zeros(env.H*env.S*env.A*env.S, dtype = 'f').reshape((env.H, env.S ,env.A, env.S))
+
+    T = k*env.H
+    L = math.log(5*env.S*env.A*T/δ)
+    C = 7*env.H*math.sqrt(L)
+
+    nhsa = np.zeros(H*S*A).reshape((H, S,A))
+
+    for i in range(0, k):
+        if i%1000 == 0:
+            print("i = ", i)
+        τ = rollout(env, pi)
+        D.append(τ)
+        for t in range(0, len(τ)):
+            sars = τ[t]
+            s = sars[0]
+            a = sars[1]
+            s_ = sars[2]
+            nhsas_[t, x, y, z] = nhsas_[t, x, y, z] + 1
+        nhsa = np.sum(nhsas_, axis = 3)
+        bi = 2*H*np.sqrt(L*np.ones(env.H*env.S*env.A).reshape(env.H, env.S, env.A)/nhsa)
+
+        pi = value_iteration(env, self.r + bi)[1]
+
+        Pi.append(pi)
+
+    return Pi
     # def ucbvi(M: MDP, k, δ, readData = False, writeData = False, readFrom = None, saveTo = None): #want this to generate a dataset and a good policy. mostly just need dataset
     #     if readData:
     #         D = np.load(readFrom + "_D.npy")
