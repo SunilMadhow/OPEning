@@ -53,7 +53,7 @@ tmis_shadow = TMIS2(D_shadow, H, S, A, env.r)
 
 
 M = N
-for n in range(len(y_ad) + 1, M):
+for n in range(0, M):
 	if n % 100 == 0:
 		print("n = ", n)
 		# print("vhat_ucb = ", vhat_ucb)
