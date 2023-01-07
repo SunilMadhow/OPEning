@@ -13,7 +13,7 @@ from itertools import product
 ## true env with exploration-augmented rewards
 
 
-def value_iteration(env, r):
+def value_iteration(env, P, r):
 
     
     H = env.H #for mountaincar 
@@ -23,7 +23,7 @@ def value_iteration(env, r):
     print("A = ", A)
 
 
-    V = np.empty((H+1)*S).reshape(H+1, S)
+    V = np.zeros((H+1)*S).reshape(H+1, S)
 
     # for j in range(0, env.num_states[1]):
     #     V[:, state_to_index(env, (env.num_states[0] - 1, j))] = 200
@@ -37,91 +37,48 @@ def value_iteration(env, r):
             s = state_to_index(env, ds)
             Qsa = np.zeros(A)
             for a in range(0, A):
-                ds_ = discrete_dynamics(env, ds, a)
-                s_  = state_to_index(env, ds_)
-                Ev = V[t+1][s_]
-                Qsa[a] = r[t, s, a] + Ev
+                Ev = np.dot(P[t, s, a], V[t + 1])
+                Qsa[a] = -1 + Ev
+                # if Ev > 100:
+                #     print("sus ", (t, s, a))
             Q[t, s] = Qsa
+            # print("Qsa ", Qsa)
             # print(np.amax(Qsa))
             V[t, s] = np.amax(Qsa)
             # pi[t, s] = np.argmax(Qsa)
-            pi[t, s] = np.random.choice(np.flatnonzero(Qsa == Qsa.max()))
-    # print("Q = ", Q)
-    # print(V[9])
-    # print(V[8])
-    print(V[1])
+            pi[t, s] = np.flatnonzero(Qsa == Qsa.max())[-1]
+
+    for i in range(0, 20):
+        print("V[", i, "] = ", V[i])
     return (V, pi.astype(int))
 
-
-# def value_iteration(env):
-
-    
-#     H = env.H #for mountaincar 
-#     S = env.observation_space.n
-#     print("S = ", S)
-#     A = env.action_space.n
-#     print("A = ", A)
-
-
-#     V = np.empty((H+1)*S).reshape(H+1, S)
-
-#     # for j in range(0, env.num_states[1]):
-#     #     V[:, state_to_index(env, (env.num_states[0] - 1, j))] = 200
-#     pi = np.zeros(H*S).reshape(H,S)
-
-#     Q = np.zeros(H*S*A).reshape((H, S, A))
-#     for t in reversed(range(0, 200)):
-#         print("t = ", t)
-#         for ds in product(range(0, env.num_states[0] - 1), range(0, env.num_states[1])): #first range encodes that V[top of the hill] = 0
-#             # print("s = ", state_to_index(env, ds)) 
-#             s = state_to_index(env, ds)
-#             Qsa = np.zeros(A)
-#             for a in range(0, A):
-#                 ds_ = discrete_dynamics(env, ds, a)
-#                 s_  = state_to_index(env, ds_)
-
-#                 Ev = V[t+1][s_]
-#                 Qsa[a] = -1 + Ev
-#             Q[t, s] = Qsa
-#             # print(np.amax(Qsa))
-#             V[t, s] = np.amax(Qsa)
-#             # pi[t, s] = np.argmax(Qsa)
-#             pi[t, s] = np.random.choice(np.flatnonzero(Qsa == Qsa.max()))
-#     # print("Q = ", Q)
-#     # print(V[9])
-#     # print(V[8])
-#     print(V[1])
-#     return (V, pi.astype(int))
-
-
-    # def val_func(M : MDP, pi):
-    #     H = M.H
-    #     S = M.S
-    #     A = M.A
-
-    #     V = np.zeros((H+1)*S).reshape(H+1, S)
-    #     for t in reversed(range(0, H)):
-    #         for s in range(0, S):
-    #             V[t, s] = np.dot(V[t + 1], M.index_P(t, s, pi[t, s])) + M.index_r(t, s, pi[t, s])
-    #     return (V, np.average(V[0]))
-
-
-# def P(env, s, a, t = 10):
+def buildP(env):
+    P = np.zeros((env.H, env.S, env.A, env.S))
+    for h in range(0, env.H):
+        for ds in product(range(0, env.num_states[0]), range(0, env.num_states[1])):
+            s = state_to_index(env, ds)
+            for a in range(0, env.A):
+                p = np.zeros(env.S)
+                ds_ =  discrete_dynamics(env, ds, a)
+                s_ = state_to_index(env, ds_)
+                p[s_] = 1
+                P[h, s, a] = p
+    print("P = ", P[5, 250, 2])
+    return P
 
 
 def rollout(env, pi):
     s = env.reset()[0]
     # print(env.)
     tau = []
+
     for t in range(0, 20):
         ds = state_to_index(env, s)
         print("ds = ", ds)
         print("pi says ", pi[t, ds])
         for i in range(0, 10):
             s, r, done, info, _ = env.step(pi[t, ds])
-            print()
-            R = R + r
-        tau.append((ds, a, state_to_index(env, s)))
+        tau.append((ds, pi[t, ds], state_to_index(env, s)))
         if done: 
             print("finished")
             break 

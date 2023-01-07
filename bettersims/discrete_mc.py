@@ -28,15 +28,20 @@ class DiscreteState(gym.ObservationWrapper):
 		s = np.round(s, 0).astype(int)
 		return s
 
+	def isterminal(self, discrete_state):
+		return discrete_state[0] == self.num_states[0] - 1
+
 def continuous_to_discrete(env, obs):
-	print(obs)
+	# print(obs)
 	return env.observation(obs)
 
 def discrete_to_continuous(env, obs):
 	s = env.original.observation_space.low + obs*np.array([1/10, 1/100])
-	return s	
+	return s
 
 def discrete_dynamics(env, s, a, t = 10):
+	# if env.isterminal(s):
+	# 	return s
 	s0 = discrete_to_continuous(env, s)
 	env.original.state = s0
 	# print("-> ", env.original.step(0))

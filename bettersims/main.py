@@ -2,7 +2,7 @@ import gym
 import numpy as np
 # from rlberry.agents import UCBVIAgent
 from discrete_mc import *
-from ucbviagent import value_iteration
+from ucbviagent import *
 
 cenv = gym.make("MountainCar-v0", render_mode  = "human")
 # cenv2 = gym.make("MountainCar-v0", render_mode = "human")
@@ -27,27 +27,33 @@ print("done")
 # print("s = ", s)
 # print("s_", s_)
 
-Z = value_iteration(env, env.r)
-pi = Z[1]
+
 R = 0
 # s = np.array(cenv2.reset())
 
 s = env.reset()[0]
 # print(env.)
 print("s = ", s)
-for t in range(0, 20):
-	ds = state_to_index(env, s)
-	print("ds = ", ds)
-	print("pi says ", pi[t, ds])
-	for i in range(0, 10):
-		s, r, done, info, _ = env.step(pi[t, ds])
-		print()
-		R = R + r
-	if done: 
-		print("finished")
-		break
-print("R = ", r)
+# for t in range(0, 20):
+# 	ds = state_to_index(env, s)
+# 	print("ds = ", ds)
+# 	print("pi says ", pi[t, ds])
+# 	for i in range(0, 10):
+# 		s, r, done, info, _ = env.step(pi[t, ds])
+# 		print()
+# 		R = R + r
+# 	if done: 
+# 		print("finished")
+# 		break
+# print("R = ", r)
+# print(continuous_to_discrete(env, (.54, .07)))
 
+# print(discrete_to_continuous(env, (17, 14)))
+# print("dd, ", discrete_dynamics(env, (7, 14), 2, 10))
+P = buildP(env)
+Z = value_iteration(env, P, env.r)
+pi = Z[1]
+rollout(env, pi)
 # print("Z = ", Z)
 env.close()
 
