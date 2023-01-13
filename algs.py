@@ -41,7 +41,7 @@ def val_func(M : MDP, pi):
 	for t in reversed(range(0, H)):
 		for s in range(0, S):
 			V[t, s] = np.dot(V[t + 1], M.index_P(t, s, pi[t, s])) + M.index_r(t, s, pi[t, s])
-	return (V, np.average(V[0]))
+	return (V, np.average(V[0])) #should be d-weighted avg
 
 
 def ucbvi(M: MDP, k, δ, readData = False, writeData = False, readFrom = None, saveTo = None): #want this to generate a dataset and a good policy. mostly just need dataset

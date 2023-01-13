@@ -48,8 +48,8 @@ def value_iteration(env, P, r):
             # pi[t, s] = np.argmax(Qsa)
             pi[t, s] = np.flatnonzero(Qsa == Qsa.max())[-1]
 
-    for i in range(0, 20):
-        print("V[", i, "] = ", V[i])
+    # for i in range(0, 20):
+    #     print("V[", i, "] = ", V[i])
     return (V, pi.astype(int))
 
 def buildP(env):
@@ -63,7 +63,7 @@ def buildP(env):
                 s_ = state_to_index(env, ds_)
                 p[s_] = 1
                 P[h, s, a] = p
-    print("P = ", P[5, 250, 2])
+    # print("P = ", P[5, 250, 2])
     return P
 
 
@@ -74,21 +74,23 @@ def rollout(env, pi):
 
     for t in range(0, 20):
         ds = state_to_index(env, s)
-        print("ds = ", ds)
-        print("pi says ", pi[t, ds])
+        # print("ds = ", ds)
+        # print("pi says ", pi[t, ds])
         for i in range(0, 10):
             s, r, done, info, _ = env.step(pi[t, ds])
         tau.append((ds, pi[t, ds], state_to_index(env, s)))
         if done: 
-            print("finished")
+            print("victory")
             break 
+    print("termination")
+    return tau
 
 # 
-def ucbvi(env, k, delta):
+def ucbvi(env, k, δ):
     D = []
 
     pi = np.random.randint(0, 2, (env.H, env.observation_space.n))
-    Pi = pi
+    Pi = [pi]
 
     nhsas_ = np.zeros(env.H*env.S*env.A*env.S, dtype = 'f').reshape((env.H, env.S ,env.A, env.S))
 
@@ -96,7 +98,7 @@ def ucbvi(env, k, delta):
     L = math.log(5*env.S*env.A*T/δ)
     C = 7*env.H*math.sqrt(L)
 
-    nhsa = np.zeros(H*S*A).reshape((H, S,A))
+    nhsa = np.zeros((env.H*env.S*env.A))
 
     for i in range(0, k):
         if i%1000 == 0:
@@ -108,12 +110,19 @@ def ucbvi(env, k, delta):
             s = sars[0]
             a = sars[1]
             s_ = sars[2]
-            nhsas_[t, x, y, z] = nhsas_[t, x, y, z] + 1
+            nhsas_[t, s, a, s_] = nhsas_[t, s, a, s_] + 1
         nhsa = np.sum(nhsas_, axis = 3)
-        bi = 2*H*np.sqrt(L*np.ones(env.H*env.S*env.A).reshape(env.H, env.S, env.A)/nhsa)
+        bi = 2*env.H*np.sqrt(L*np.ones(env.H*env.S*env.A).reshape(env.H, env.S, env.A)/nhsa)
 
-        pi = value_iteration(env, self.r + bi)[1]
-
+        P = np.zeros((env.H, env.S, env.A, env.S))
+        for h in range(0, env.H):
+            for s in range(0, env.S):
+                for a in range(0, env.A):
+                    for s_ in range(0, env.S):
+                        if nhsa[h, s, a] != 0:
+                            P[h, s, a, s_] = nhsas_[h, s, a, s_]/nhsa[h, s, a]
+        print("nnz(P) ", np.count_nonzero(P))
+        pi = value_iteration(env, P,  env.r + bi)[1]
         Pi.append(pi)
 
     return Pi

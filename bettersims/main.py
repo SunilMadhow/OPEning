@@ -3,8 +3,8 @@ import numpy as np
 # from rlberry.agents import UCBVIAgent
 from discrete_mc import *
 from ucbviagent import *
-
-cenv = gym.make("MountainCar-v0", render_mode  = "human")
+rm = None #"human"
+cenv = gym.make("MountainCar-v0", render_mode  = rm)
 # cenv2 = gym.make("MountainCar-v0", render_mode = "human")
 # cenv2 = cenv2.unwrapped
 env = DiscreteState(cenv)
@@ -50,9 +50,12 @@ print("s = ", s)
 
 # print(discrete_to_continuous(env, (17, 14)))
 # print("dd, ", discrete_dynamics(env, (7, 14), 2, 10))
-P = buildP(env)
-Z = value_iteration(env, P, env.r)
+# P = buildP(env)
+# Z = value_iteration(env, P, env.r)
+
+Z = ucbvi(env, 500, .01)
 pi = Z[1]
+print("rolling out last pol")
 rollout(env, pi)
 # print("Z = ", Z)
 env.close()

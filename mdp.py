@@ -55,6 +55,9 @@ class MDP:
 
 	def index_r(self, h, s, a):
 		return self.r[h, s, a]
+
+	def stoch_rew(self, h, s, a):
+		return np.random.uniform(self.index_r(h, s, a) - .5, self.index_r(h, s, a) + .5)
 	
 	def rollout(self, pi, k): 
 		D = []
@@ -67,7 +70,8 @@ class MDP:
 			for h in range(0, self.H):
 				a = pi[h,s]
 				s_ = np.random.choice(range(self.S), p = self.index_P(h, s, a))
-				r = self.index_r(h, s, a)
+				# r = self.index_r(h, s, a)
+				r = self.stoch_rew(h, s, a)
 				tau.append((s, a, r, s_))
 				s = s_
 				
